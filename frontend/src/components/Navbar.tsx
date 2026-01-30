@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { assets } from '../assets/assets';
 import { Link, useNavigate } from 'react-router-dom';
+import RainbowButton from './RainbowButton';
 
 const Navbar = () => {
 
@@ -9,24 +10,49 @@ const Navbar = () => {
 
   return (
     <>
-      
-      <nav className="z-50 flex items-center justify-between w-full py-4 px-4 md:px-16 lg:px-24 xl:px-32 backdrop-blur border-b text-white border-slate-800">
+
+      <nav className="z-50 flex items-center justify-between w-full pt-2 px-4 md:px-16 lg:px-24 xl:px-32 backdrop-blur  text-white border-slate-800">
         <Link to="/">
           <img src={assets.navLogo} alt="Logo" className='h-10 sm:h-8' />
         </Link>
 
         <div className="hidden md:flex items-center gap-8 transition duration-500">
-          <Link to="/" className="hover:text-slate-300 transition">Home</Link>
-          <Link to="/projects" className="hover:text-slate-300 transition">Projects</Link>
-          <Link to="/community" className="hover:text-slate-300 transition">Community</Link>
-          <Link to="/pricing" className="hover:text-slate-300 transition">Pricing</Link>
+
+          
+          {[
+            { name: 'Home', path: '/' },
+            { name: 'Projects', path: '/projects' },
+            { name: 'Community', path: '/community' },
+            { name: 'Pricing', path: '/pricing' },
+          ].map((link) => (
+            <Link
+              key={link.name}
+              to={link.path}
+              onClick={() => setMenuOpen(false)} // Closes menu when ANY link is clicked
+              className="group relative overflow-hidden inline-block h-5"
+            >
+              {/* Visible Text */}
+              <span className="block transition-transform duration-300 group-hover:-translate-y-full">
+                {link.name}
+              </span>
+
+              {/* Hidden Text (Slides Up) */}
+              <span className="absolute top-full left-0 block w-full transition-transform duration-300 group-hover:-translate-y-full">
+                {link.name}
+              </span>
+            </Link>
+          ))}
 
         </div>
 
         <div className="flex items-center gap-4">
-          <button className="px-6 py-2 max-sm:text-sm  bg-indigo-600 active:scale-95 hover:bg-indigo-700 transition rounded-md" onClick={() => navigate('/auth/signin')}>
+          {/* <button className="px-6 py-2 max-sm:text-sm  bg-indigo-600 active:scale-95 hover:bg-indigo-700 transition rounded-md" onClick={() => navigate('/auth/signin')}>
             Get started
-          </button>
+          </button> */}
+          <RainbowButton onClick={() => { navigate('/auth/signin') }}>
+            Get Started
+          </RainbowButton>
+
 
           <button id="open-menu" className="md:hidden active:scale-90 transition" onClick={() => setMenuOpen(true)} >
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></svg>
@@ -39,6 +65,7 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="fixed inset-0 z-[100] bg-black/60 text-white backdrop-blur flex flex-col items-center justify-center text-lg gap-8 md:hidden transition-transform duration-300">
+
           <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
           <Link to="/projects" onClick={() => setMenuOpen(false)}>Projects</Link>
           <Link to="/community" onClick={() => setMenuOpen(false)}>Community</Link>
