@@ -2,7 +2,7 @@
 import {
   __toESM,
   require_react
-} from "./chunk-5VW2NNEB.js";
+} from "./chunk-S63IS3LU.js";
 
 // node_modules/next-themes/dist/index.mjs
 var t = __toESM(require_react(), 1);

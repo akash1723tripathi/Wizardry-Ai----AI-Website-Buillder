@@ -2,11 +2,15 @@ import { useState } from 'react'
 import { assets } from '../assets/assets';
 import { Link, useNavigate } from 'react-router-dom';
 import RainbowButton from './RainbowButton';
+import { authClient } from '@/lib/auth-client';
+import UserButton from "@/components/user_button"
 
 const Navbar = () => {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+
+  const {data:session} = authClient.useSession();
 
   return (
     <>
@@ -46,12 +50,15 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* <button className="px-6 py-2 max-sm:text-sm  bg-indigo-600 active:scale-95 hover:bg-indigo-700 transition rounded-md" onClick={() => navigate('/auth/signin')}>
-            Get started
-          </button> */}
-          <RainbowButton onClick={() => { navigate('/auth/signin') }}>
+
+          { !session?.user ?(
+            <RainbowButton onClick={() => { navigate('/auth/sign-in') }}>
             Get Started
           </RainbowButton>
+          ):(
+            <UserButton/>
+          )
+            }
 
 
           <button id="open-menu" className="md:hidden active:scale-90 transition" onClick={() => setMenuOpen(true)} >
@@ -76,7 +83,7 @@ const Navbar = () => {
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
           </button>
         </div>
-      )}z
+      )}
     </>
   )
 }
