@@ -1,58 +1,70 @@
 {
-  "hash": "663b5287",
+  "hash": "a3de50d6",
   "configHash": "16855414",
-  "lockfileHash": "28089d6e",
-  "browserHash": "b20992df",
+  "lockfileHash": "eafdfbed",
+  "browserHash": "f63dc4cd",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "fc9dda63",
+      "fileHash": "77c367da",
       "needsInterop": true
     },
     "react/jsx-dev-runtime": {
       "src": "../../node_modules/react/jsx-dev-runtime.js",
       "file": "react_jsx-dev-runtime.js",
-      "fileHash": "3e7847fc",
+      "fileHash": "afb27481",
       "needsInterop": true
     },
     "react/jsx-runtime": {
       "src": "../../node_modules/react/jsx-runtime.js",
       "file": "react_jsx-runtime.js",
-      "fileHash": "ce710711",
+      "fileHash": "dcb69dac",
       "needsInterop": true
     },
     "lucide-react": {
       "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
       "file": "lucide-react.js",
-      "fileHash": "b8b3a2d3",
+      "fileHash": "2cb4873b",
+      "needsInterop": false
+    },
+    "next-themes": {
+      "src": "../../node_modules/next-themes/dist/index.mjs",
+      "file": "next-themes.js",
+      "fileHash": "464f57bc",
       "needsInterop": false
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "141b022b",
+      "fileHash": "633212b5",
       "needsInterop": true
     },
     "react-router": {
       "src": "../../node_modules/react-router/dist/index.js",
       "file": "react-router.js",
-      "fileHash": "bf78b3fb",
+      "fileHash": "42a099b1",
       "needsInterop": false
     },
     "react-router-dom": {
       "src": "../../node_modules/react-router-dom/dist/index.js",
       "file": "react-router-dom.js",
-      "fileHash": "540230dc",
+      "fileHash": "c7a17941",
+      "needsInterop": false
+    },
+    "sonner": {
+      "src": "../../node_modules/sonner/dist/index.mjs",
+      "file": "sonner.js",
+      "fileHash": "c95a67d5",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-DHEZ6HTF": {
-      "file": "chunk-DHEZ6HTF.js"
-    },
     "chunk-K3CAZO6O": {
       "file": "chunk-K3CAZO6O.js"
+    },
+    "chunk-DHEZ6HTF": {
+      "file": "chunk-DHEZ6HTF.js"
     },
     "chunk-5VW2NNEB": {
       "file": "chunk-5VW2NNEB.js"

@@ -1,7 +1,4 @@
 import {
-  require_react_dom
-} from "./chunk-DHEZ6HTF.js";
-import {
   AbortedDeferredError,
   Action,
   Await,
@@ -64,6 +61,9 @@ import {
   useRoutesImpl,
   warning
 } from "./chunk-K3CAZO6O.js";
+import {
+  require_react_dom
+} from "./chunk-DHEZ6HTF.js";
 import {
   __toESM,
   require_react

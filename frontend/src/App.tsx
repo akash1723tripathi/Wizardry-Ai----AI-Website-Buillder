@@ -5,6 +5,7 @@ import Community from "./pages/Community"
 import Pricing from "./pages/Pricing"
 import Preview from "./pages/Preview"
 import MyProjects from "./pages/MyProjects"
+import { Toaster } from "@/components/ui/sonner"
 
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
 
   return (
     <>
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/projects/:projectId" element={<Projects />} />
