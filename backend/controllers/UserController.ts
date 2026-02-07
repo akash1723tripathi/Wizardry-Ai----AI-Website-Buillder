@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import openai from "../config/openAi.js";
-import { role } from "better-auth/plugins";
+import Stripe from "stripe";
 
 // Get user Credits
 export const getUserCredits = async (req: Request, res: Response) => {
@@ -145,9 +145,9 @@ export const createUserProjects = async (req: Request, res: Response) => {
                               4. Do NOT include markdown, explanations, notes, or code fences.
 
                               The HTML should be complete and ready to render as-is with Tailwind CSS.`
-                        },{
+                        }, {
                               role: 'user',
-                              content : enhancedPrompt || " "
+                              content: enhancedPrompt || " "
                         }
                   ]
             })
@@ -158,7 +158,7 @@ export const createUserProjects = async (req: Request, res: Response) => {
                         data: {
                               role: "assistant",
                               content: `Unable to generate the code, Please try again`,
-                              projectId : project.id
+                              projectId: project.id
                         }
                   })
 
@@ -173,7 +173,7 @@ export const createUserProjects = async (req: Request, res: Response) => {
 
             //create version for the project
             const version = await prisma.version.create({
-                  data:{
+                  data: {
                         code: code.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim(),
                         description: "Initial version",
                         projectId: project.id
@@ -213,16 +213,16 @@ export const getUserProject = async (req: Request, res: Response) => {
             if (!UserId) {
                   return res.status(401).json({ message: "Unauthorized" })
             }
-            
+
             const { projectId } = req.params;
             const project = await prisma.websiteProject.findUnique({
                   where: { id: projectId, userId: UserId },
                   include: {
-                        conversation:{
-                              orderBy:{timestamp: 'asc'}
+                        conversation: {
+                              orderBy: { timestamp: 'asc' }
                         },
-                        versions:{
-                              orderBy:{timestamp: 'asc'}
+                        versions: {
+                              orderBy: { timestamp: 'asc' }
                         }
                   }
             })
@@ -233,7 +233,7 @@ export const getUserProject = async (req: Request, res: Response) => {
             console.log(error.code || error.message);
             res.status(500).json({ message: error.message })
       }
-} 
+}
 
 
 //Controller to get all user projects
@@ -243,10 +243,10 @@ export const getUserProjects = async (req: Request, res: Response) => {
             if (!UserId) {
                   return res.status(401).json({ message: "Unauthorized" })
             }
-            
+
             const projects = await prisma.websiteProject.findMany({
                   where: { userId: UserId },
-                  orderBy:{
+                  orderBy: {
                         updatedAt: 'desc'
                   }
             })
@@ -265,13 +265,13 @@ export const togglePublish = async (req: Request, res: Response) => {
             if (!UserId) {
                   return res.status(401).json({ message: "Unauthorized" })
             }
-            
+
             const { projectId } = req.params;
             const project = await prisma.websiteProject.findUnique({
                   where: { id: projectId, userId: UserId }
             })
 
-            if(!project){
+            if (!project) {
                   return res.status(404).json({ message: "Project not found" })
             }
 
@@ -279,8 +279,8 @@ export const togglePublish = async (req: Request, res: Response) => {
                   where: { id: projectId },
                   data: { isPublished: !project.isPublished }
             })
-            
-            res.json({ message:project.isPublished ? "Project unpublished " : "Project published successfully" });
+
+            res.json({ message: project.isPublished ? "Project unpublished " : "Project published successfully" });
       } catch (error: any) {
             console.log(error.code || error.message);
             res.status(500).json({ message: error.message })
@@ -290,5 +290,67 @@ export const togglePublish = async (req: Request, res: Response) => {
 
 //Controller function to purchase credits
 
-export const purchaseCredits = async (req: Request, res: Response) => {}
-      
+export const purchaseCredits = async (req: Request, res: Response) => {
+      try {
+            interface Plan {
+                  credits: number;
+                  amount: number;
+            }
+
+            const plans = {
+                  Basic: { credits: 100, amount: 5 },
+                  Pro: { credits: 400, amount: 19 },
+                  Enterprise: { credits: 1000, amount: 49 },
+            }
+
+            const UserId = req.UserId;
+            if (!UserId) {
+                  return res.status(401).json({ message: "Unauthorized" })
+            }
+
+            const {planId} = req.body as { planId: keyof typeof plans };
+            const origin = req.headers.origin as string;
+
+            const plan: Plan = plans[planId]
+            if (!plan) {
+                  return res.status(404).json({ message: "Plan not found" })
+            }
+
+            const transaction = await prisma.transaction.create({
+                  data: {
+                        userId: UserId!,
+                        planId: req.body.planId,
+                        amount: plan.amount,
+                        credits: plan.credits,
+                  }
+            })
+
+            const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
+            const session = await stripe.checkout.sessions.create({
+                  success_url: `${origin}/loading`,
+                  cancel_url: `${origin}`,
+                  line_items: [
+                        {
+                              price_data: {
+                                    currency: 'usd',
+                                    product_data: { name:` Wizardry AI - ${plan.credits} Credits` },
+                                    unit_amount: Math.floor(transaction.amount) * 100
+                              },
+                              quantity: 1
+                        }
+                  ],
+                  mode: 'payment',
+                  metadata:{
+                        transactionId: transaction.id,
+                        appId: 'wizardry-ai'
+                  },
+                  expires_at: Math.floor(Date.now() / 1000) + (30 * 60) 
+            });
+
+            res.json({ payment_link: session.url });
+
+      } catch (error: any) {
+            console.log(error.code || error.message);
+            res.status(500).json({ message: error.message })      
+      }
+}

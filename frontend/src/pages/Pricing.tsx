@@ -2,6 +2,9 @@ import React from "react"
 import { appPlans } from "../assets/assets"
 import Footer from "../components/Footer"
 import Navbar from "../components/Navbar"
+import { authClient } from "@/lib/auth-client"
+import { toast } from "sonner"
+import api from "@/configs/axios"
 
 interface Plan {
   id: string,
@@ -11,23 +14,45 @@ interface Plan {
   description: string,
   features: string[]
 }
+
 const Pricing = () => {
   const [plans] = React.useState<Plan[]>(appPlans)
+  const { data: session } = authClient.useSession()
 
-  const handlePurchase = (planId: string) => {
-    // Implement purchase logic here
-    console.log(`Purchasing plan with ID: ${planId}`);
+  const handlePurchase = async (planId: string) => {
+    try {
+      if (!session?.user) {
+        return toast.error("Please login to purchase a plan")
+      }
+
+      console.log('Sending planId:', planId); // ✅ Debug log
+      
+      const { data } = await api.post('/api/user/purchase-credits', { planId })
+      
+      console.log('Response:', data); // ✅ Debug log
+      
+      if (data.payment_link) {
+        window.location.href = data.payment_link
+      } else {
+        toast.error("Failed to get payment link")
+      }
+      
+    } catch (error: any) {
+      console.error('Purchase error:', error); // ✅ Debug log
+      console.error('Error response:', error?.response); // ✅ Debug log
+      toast.error(error?.response?.data?.message || "Failed to initiate purchase. Please try again.")
+    }
   }
 
   return (
     <>
-      <Navbar/>
+      <Navbar />
       <img src="https://images.unsplash.com/photo-1712397943847-e104395a1a8b?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" className="fixed inset-0 -z-10 w-full h-full object-cover opacity-45" alt="" />
 
       <div className="w-full max-w-5xl mt-5 mx-auto max-md:px-4 min-h-[80vh] z-20">
         <div className="text-center " >
           <h2 className=" text-gray-100 text-4xl font-bold mb-3 ">Choose Your Plan</h2>
-          <p className="text-gray-400 text-sm max-w-md mx-auto mt-2">Start for free and scale up as you grow. Find the perfect plan fro your creation needs.</p>
+          <p className="text-gray-400 text-sm max-w-md mx-auto mt-2">Start for free and scale up as you grow. Find the perfect plan for your creation needs.</p>
         </div>
 
         <div className='pt-14 py-4 px-4 '>
@@ -53,16 +78,22 @@ const Pricing = () => {
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => handlePurchase(plan.id)} className="w-full py-2 px-4 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-sm rounded-md transition-all">
+                <button 
+                  onClick={() => handlePurchase(plan.id)} 
+                  className="w-full py-2 px-4 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-sm rounded-md transition-all"
+                >
                   Buy Now
                 </button>
               </div>
             ))}
           </div>
         </div>
-        <p className="mx-auto text-center text-sm max-w-md mt-10 text-white/60 font-light">Project <span className="text-white">Creation/Revision</span> consume <span className="text-white">5 credits</span>. You can purchase more credits by selecting a plan above on top of the existing plan.</p>
+        <p className="mx-auto text-center text-sm max-w-md mt-10 text-white/60 font-light">
+          Project <span className="text-white">Creation/Revision</span> consume <span className="text-white">5 credits</span>. 
+          You can purchase more credits by selecting a plan above on top of the existing plan.
+        </p>
       </div>
-      <Footer/>
+      <Footer />
     </>
   )
 }

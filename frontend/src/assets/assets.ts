@@ -6,7 +6,7 @@ export const assets = {
 
 export const appPlans = [
         {
-            id: 'basic',
+            id: 'Basic',
             name: 'Basic',
             price: '$5',
             credits: 100,
@@ -14,7 +14,7 @@ export const appPlans = [
             features: ['Upto 20 Creations', 'Limited Revisions', 'Basic AI Models', 'email support', 'Basic analytics',],
         },
         {
-            id: 'pro',
+            id: 'Pro',
             name: 'Pro',
             price: '$19',
             credits: 400,
@@ -22,7 +22,7 @@ export const appPlans = [
             features: ['Upto 80 Creations', 'Extended Revisions', 'Advanced AI Models', 'priority email support', 'Advanced analytics',],
         },
         {
-            id: 'enterprise',
+            id: 'Enterprise',
             name: 'Enterprise',
             price: '$49',
             credits: 1000,
