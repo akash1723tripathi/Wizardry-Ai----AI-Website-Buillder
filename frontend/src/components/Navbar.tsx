@@ -1,16 +1,35 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { assets } from '../assets/assets';
 import { Link, useNavigate } from 'react-router-dom';
 import RainbowButton from './RainbowButton';
 import { authClient } from '@/lib/auth-client';
 import UserButton from "@/components/user_button"
+import api from '@/configs/axios';
+import { toast } from 'sonner';
 
 const Navbar = () => {
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [credits, setCredits] = useState(0);
   const navigate = useNavigate();
-
   const {data:session} = authClient.useSession();
+
+  const getCredits = async ()=>{
+    try {
+      const {data} = await api.get('/api/user/credits')
+      setCredits(data.credits);
+
+    } catch (error:any) {
+      toast.error(error?.response?.data?.message || 'Failed to fetch credits');
+      console.log(error);
+    }
+  }
+
+  useEffect(()=>{
+    if(session?.user){
+      getCredits();
+    }
+  },[session?.user])
 
   return (
     <>
@@ -56,7 +75,11 @@ const Navbar = () => {
             Get Started
           </RainbowButton>
           ):(
-            <UserButton/>
+            <>
+            <button className='bg-white/10 px-3 py-2 text-xs sm:text-sm border text-gray-200 rounded-full'>Credits: <span className='text-indigo-600'>{credits}</span></button>
+              <UserButton/>
+            </>
+            
           )
             }
 

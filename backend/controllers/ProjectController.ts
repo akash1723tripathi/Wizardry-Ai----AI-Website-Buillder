@@ -52,7 +52,7 @@ export const makeRevision = async (req: Request, res: Response) => {
 
             //To enhacne user prompt
             const promptEnhanceResponse = await openai.chat.completions.create({
-                  model: "z-ai/glm-4.5-air:free",
+                  model: "tngtech/deepseek-r1t2-chimera:free",
                   messages: [
                         {
                               role: "system",
@@ -93,7 +93,7 @@ export const makeRevision = async (req: Request, res: Response) => {
 
             //Generate website code
             const codeGenerationResponse = await openai.chat.completions.create({
-                  model: "z-ai/glm-4.5-air:free",
+                  model: "tngtech/deepseek-r1t2-chimera:free",
                   messages: [
                         {
                               role: "system",
@@ -117,6 +117,27 @@ export const makeRevision = async (req: Request, res: Response) => {
             })
 
             const code = codeGenerationResponse.choices[0].message.content || '';
+
+            if (!code) {
+                  await prisma.conversation.create({
+                        data: {
+                              role: "assistant",
+                              content: `Unable to generate the code, Please try again`,
+                              projectId
+                        }
+                  })
+
+                  await prisma.user.update({
+                        where: { id: UserId },
+                        data: {
+                              credits: { increment: 5 }
+                        }
+                  })
+                  return;
+            }
+
+
+
             const version = await prisma.version.create({
                   data: {
                         code: code.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim(),
@@ -157,26 +178,26 @@ export const makeRevision = async (req: Request, res: Response) => {
 
 //Controller Function to roll back to a previous version
 export const rollbackVersion = async (req: Request, res: Response) => {
-      try{
+      try {
             const UserId = req.UserId;
-            if(!UserId){
-                  return res.status(401).json({ message: "Unauthorized" }) 
+            if (!UserId) {
+                  return res.status(401).json({ message: "Unauthorized" })
             }
 
             const { projectId, versionId } = req.params;
-            
+
             const project = await prisma.websiteProject.findUnique({
                   where: { id: projectId, userId: UserId },
                   include: { versions: true }
             })
 
-            if(!project){
+            if (!project) {
                   return res.status(404).json({ message: "Project not found" })
             }
 
-            const version = project.versions.find((version)=> version.id === versionId)
+            const version = project.versions.find((version) => version.id === versionId)
 
-            if(!version){
+            if (!version) {
                   return res.status(404).json({ message: "Version not found" })
             }
 
@@ -189,16 +210,16 @@ export const rollbackVersion = async (req: Request, res: Response) => {
             })
 
             await prisma.conversation.create({
-                  data:{
+                  data: {
                         role: "assistant",
-                        content : "I have rolled back your website to the selected version.",
+                        content: "I have rolled back your website to the selected version.",
                         projectId
                   }
             })
 
             res.json({ message: "Rolled back successfully" })
       }
-      catch(error: any){
+      catch (error: any) {
             console.log(error.code || error.message);
             res.status(500).json({ message: error.message })
       }
@@ -206,7 +227,7 @@ export const rollbackVersion = async (req: Request, res: Response) => {
 
 //Delete any project
 export const deleteProject = async (req: Request, res: Response) => {
-      try{
+      try {
             const UserId = req.UserId;
             const { projectId } = req.params;
 
@@ -216,7 +237,7 @@ export const deleteProject = async (req: Request, res: Response) => {
 
             res.json({ message: "Project deleted successfully" });
       }
-      catch(error: any){
+      catch (error: any) {
             console.log(error.code || error.message);
             res.status(500).json({ message: error.message })
       }
@@ -224,12 +245,12 @@ export const deleteProject = async (req: Request, res: Response) => {
 
 //Controller for getting project code for preview
 export const getProjectPreview = async (req: Request, res: Response) => {
-      try{
+      try {
             const UserId = req.UserId;
             const { projectId } = req.params;
 
-            if(!UserId){
-                  return res.status(401).json({ message: "Unauthorized" }) 
+            if (!UserId) {
+                  return res.status(401).json({ message: "Unauthorized" })
             }
 
             const project = await prisma.websiteProject.findFirst({
@@ -237,12 +258,12 @@ export const getProjectPreview = async (req: Request, res: Response) => {
                   include: { versions: true }
             })
 
-            if(!project){
+            if (!project) {
                   return res.status(404).json({ message: "Project not found" })
             }
             res.json({ project });
       }
-      catch(error: any){
+      catch (error: any) {
             console.log(error.code || error.message);
             res.status(500).json({ message: error.message })
       }
@@ -250,14 +271,14 @@ export const getProjectPreview = async (req: Request, res: Response) => {
 
 //GetPublished Projects
 export const getPublishedProjects = async (req: Request, res: Response) => {
-      try{
+      try {
             const projects = await prisma.websiteProject.findMany({
                   where: { isPublished: true },
                   include: { user: true }
             })
             res.json({ projects });
       }
-      catch(error: any){
+      catch (error: any) {
             console.log(error.code || error.message);
             res.status(500).json({ message: error.message })
       }
@@ -265,20 +286,20 @@ export const getPublishedProjects = async (req: Request, res: Response) => {
 
 //Controller to a Get a singleproject bt id
 export const getProjectById = async (req: Request, res: Response) => {
-      try{
+      try {
             const { projectId } = req.params;
 
             const project = await prisma.websiteProject.findFirst({
                   where: { id: projectId }
             })
 
-            if(!project || project.isPublished === false || !project?.current_code){
+            if (!project || project.isPublished === false || !project?.current_code) {
                   return res.status(404).json({ message: "Project not found" })
             }
 
-            res.json({ code : project.current_code });
+            res.json({ code: project.current_code });
       }
-      catch(error: any){
+      catch (error: any) {
             console.log(error.code || error.message);
             res.status(500).json({ message: error.message })
       }
@@ -286,17 +307,17 @@ export const getProjectById = async (req: Request, res: Response) => {
 
 //Controller to save changes in the project
 export const saveProjectCode = async (req: Request, res: Response) => {
-      try{
+      try {
             const UserId = req.UserId;
             const { projectId } = req.params;
             const { code } = req.body;
 
-            if(!UserId){
-                  return res.status(401).json({ message: "Unauthorized" }) 
+            if (!UserId) {
+                  return res.status(401).json({ message: "Unauthorized" })
             }
 
-            if(!code){
-                  return res.status(400).json({ message: "Code is required" }) 
+            if (!code) {
+                  return res.status(400).json({ message: "Code is required" })
             }
 
             const project = await prisma.websiteProject.findFirst({
@@ -304,13 +325,13 @@ export const saveProjectCode = async (req: Request, res: Response) => {
                   include: { versions: true }
             })
 
-            if(!project){
+            if (!project) {
                   return res.status(404).json({ message: "Project not found" })
             }
-            
+
             await prisma.websiteProject.update({
                   where: { id: projectId },
-                  data:{
+                  data: {
                         current_code: code,
                         current_version_index: ""
                   }
@@ -318,7 +339,7 @@ export const saveProjectCode = async (req: Request, res: Response) => {
 
             res.json({ message: "Project saved successfully" });
       }
-      catch(error: any){
+      catch (error: any) {
             console.log(error.code || error.message);
             res.status(500).json({ message: error.message })
       }

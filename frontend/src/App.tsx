@@ -14,13 +14,14 @@ function App() {
 
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/projects/:projectId" element={<Projects />} />
         <Route path="/projects" element={<MyProjects />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/preview/:projectId" element={<Preview />} />
+        <Route path="/view/:projectId" element={<Preview />} />
         <Route path="/community" element={<Community />} />
         <Route path="/auth/:pathname" element={<AuthPage />} />
       </Routes>
