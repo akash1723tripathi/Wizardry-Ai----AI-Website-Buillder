@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from "express"; // ✅ Add NextFunction
+import { Request, Response, NextFunction } from "express"; 
 import { auth } from "../lib/auth.js";
 import { fromNodeHeaders } from "better-auth/node";
 
-// ✅ Add next parameter with NextFunction type
+
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
       try {
             const session = await auth.api.getSession({
@@ -14,7 +14,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
             }
 
             req.UserId = session.user.id;
-            next(); // ✅ Now this will work
+            next(); 
 
       } catch (error: any) {
             console.log(error);
