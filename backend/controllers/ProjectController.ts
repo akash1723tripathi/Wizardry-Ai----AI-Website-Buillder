@@ -27,7 +27,7 @@ export const makeRevision = async (req: Request, res: Response) => {
             }
 
             const currentProject = await prisma.websiteProject.findUnique({
-                  where: { id: projectId, userId: UserId },
+                  where: { id: projectId as string, userId: UserId },
                   include: { versions: true }
             })
 
@@ -39,7 +39,7 @@ export const makeRevision = async (req: Request, res: Response) => {
                   data: {
                         role: "user",
                         content: revision_prompt,
-                        projectId
+                        projectId: projectId as string
                   }
             })
 
@@ -79,7 +79,7 @@ export const makeRevision = async (req: Request, res: Response) => {
                   data: {
                         role: "assistant",
                         content: `I have enhanced your prompt to "${enhancedPrompt}"`,
-                        projectId
+                        projectId: projectId as string
                   }
             })
 
@@ -87,7 +87,7 @@ export const makeRevision = async (req: Request, res: Response) => {
                   data: {
                         role: "assistant",
                         content: `Now making changes to your website...`,
-                        projectId
+                        projectId: projectId as string
                   }
             })
 
@@ -123,7 +123,7 @@ export const makeRevision = async (req: Request, res: Response) => {
                         data: {
                               role: "assistant",
                               content: `Unable to generate the code, Please try again`,
-                              projectId
+                              projectId: projectId as string
                         }
                   })
 
@@ -142,7 +142,7 @@ export const makeRevision = async (req: Request, res: Response) => {
                   data: {
                         code: code.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim(),
                         description: 'Changes made',
-                        projectId
+                        projectId: projectId as string
                   }
             })
 
@@ -150,12 +150,12 @@ export const makeRevision = async (req: Request, res: Response) => {
                   data: {
                         role: "assistant",
                         content: `I've made the changes to your website. You can now preview it.`,
-                        projectId
+                        projectId: projectId as string
                   }
             })
 
             await prisma.websiteProject.update({
-                  where: { id: projectId },
+                  where: { id: projectId as string },
                   data: {
                         current_code: code.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim(),
                         current_version_index: version.id
@@ -187,7 +187,7 @@ export const rollbackVersion = async (req: Request, res: Response) => {
             const { projectId, versionId } = req.params;
 
             const project = await prisma.websiteProject.findUnique({
-                  where: { id: projectId, userId: UserId },
+                  where: { id: projectId as string, userId: UserId },
                   include: { versions: true }
             })
 
@@ -202,7 +202,7 @@ export const rollbackVersion = async (req: Request, res: Response) => {
             }
 
             await prisma.websiteProject.update({
-                  where: { id: projectId },
+                  where: { id: projectId as string },
                   data: {
                         current_code: version.code,
                         current_version_index: version.id
@@ -213,7 +213,7 @@ export const rollbackVersion = async (req: Request, res: Response) => {
                   data: {
                         role: "assistant",
                         content: "I have rolled back your website to the selected version.",
-                        projectId
+                        projectId: projectId as string
                   }
             })
 
@@ -232,7 +232,7 @@ export const deleteProject = async (req: Request, res: Response) => {
             const { projectId } = req.params;
 
             await prisma.websiteProject.delete({
-                  where: { id: projectId, userId: UserId }
+                  where: { id: projectId as string, userId: UserId }
             })
 
             res.json({ message: "Project deleted successfully" });
@@ -254,7 +254,7 @@ export const getProjectPreview = async (req: Request, res: Response) => {
             }
 
             const project = await prisma.websiteProject.findFirst({
-                  where: { id: projectId, userId: UserId },
+                  where: { id: projectId as string, userId: UserId },
                   include: { versions: true }
             })
 
@@ -290,7 +290,7 @@ export const getProjectById = async (req: Request, res: Response) => {
             const { projectId } = req.params;
 
             const project = await prisma.websiteProject.findFirst({
-                  where: { id: projectId }
+                  where: { id: projectId as string }
             })
 
             if (!project || project.isPublished === false || !project?.current_code) {
@@ -321,7 +321,7 @@ export const saveProjectCode = async (req: Request, res: Response) => {
             }
 
             const project = await prisma.websiteProject.findFirst({
-                  where: { id: projectId, userId: UserId },
+                  where: { id: projectId as string, userId: UserId },
                   include: { versions: true }
             })
 
@@ -330,7 +330,7 @@ export const saveProjectCode = async (req: Request, res: Response) => {
             }
 
             await prisma.websiteProject.update({
-                  where: { id: projectId },
+                  where: { id: projectId as string },
                   data: {
                         current_code: code,
                         current_version_index: ""
