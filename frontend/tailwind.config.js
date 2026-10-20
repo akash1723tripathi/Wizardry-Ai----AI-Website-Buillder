@@ -12,6 +12,14 @@ export default {
   			outfit: [
   				'Outfit"',
   				'sans-serif'
+  			],
+  			inter: [
+  				'Inter',
+  				'sans-serif'
+  			],
+  			domine: [
+  				'Domine',
+  				'serif'
   			]
   		},
   		borderRadius: {
