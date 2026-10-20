@@ -28,6 +28,10 @@ function App() {
         <Route path="/view/:projectId" element={<Preview />} />
         <Route path="/community" element={<Community />} />
         <Route path="/auth/:pathname" element={<AuthPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/sign-in" element={<AuthPage />} />
+        <Route path="/sign-up" element={<AuthPage />} />
         <Route path="/loading" element={<Loading />} />
       </Routes>
       </AnimatePresence>
