@@ -3,6 +3,7 @@ import Footer from '../components/Footer'
 import HeroSection from '../components/landing/HeroSection'
 import FeaturesSection from '../components/landing/FeaturesSection'
 import BuildProcess from '../components/landing/BuildProcess'
+import CommunitySection from '../components/landing/CommunitySection'
 import PricingSection from '../components/landing/PricingSection'
 import Testimonials from '../components/landing/Testimonials'
 import CallToAction from '../components/landing/CallToAction'
@@ -18,6 +19,7 @@ const Home = () => {
                   <main className="px-4 py-4 md:px-16 lg:px-24 xl:px-32">
                         <FeaturesSection />
                         <BuildProcess />
+                        <CommunitySection />
                         <PricingSection />
                         <Testimonials />
                         <CallToAction />
