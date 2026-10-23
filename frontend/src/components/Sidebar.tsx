@@ -1,4 +1,4 @@
-import { BotIcon, EyeIcon, Loader2Icon, SendIcon, UserIcon } from "lucide-react";
+import { ArrowUpIcon, EyeIcon, HistoryIcon, Loader2Icon, SparklesIcon } from "lucide-react";
 import type { Message, Project, Version } from "../types";
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
@@ -14,158 +14,169 @@ interface SidebarProps {
       setIsGenerating: (setIsGenerating: boolean) => void;
 }
 
-
-
 const Sidebar = ({ isMenuOpen, project, setProject, isGenerating, setIsGenerating }: SidebarProps) => {
 
       const [input, setInput] = useState<string>('');
 
-      const handleRollback = async (versionId: string) => {
-            try {
-                  const confirm = window.confirm('Are you sure you want to roll back to this version? Any unsaved changes will be lost.')
-                  if(!confirm) return;
-                  setIsGenerating(true);
-                  const { data } = await api.get(`/api/project/rollback/${project.id}/${versionId}`);
-                  const { data:data2 } = await api.get(`/api/user/project/${project.id}`);
-                  setProject(data2.project);
-                  toast.success(data.message);
-                  setIsGenerating(false);
-            } catch (error:any) {
-                  setIsGenerating(false);
-                  toast.error(error?.response?.data?.message || 'Failed to roll back to this version')
-                  console.log(error)
-            }
-      }
-
       const fetchProject = async () => {
             try {
-                  const {data} = await api.get(`/api/user/project/${project.id}`)
+                  const { data } = await api.get(`/api/user/project/${project.id}`)
                   setProject(data.project)
-            } catch (error:any) {
+            } catch (error: any) {
                   toast.error(error?.response?.data?.message || 'Failed to load project')
                   console.log(error)
             }
       }
 
-      const handleRevisions = () => async (e: React.FormEvent) => {
-            e.preventDefault();
-            let interval: number | undefined;
+      const handleRollback = async (versionId: string) => {
+            const confirmed = window.confirm('Restore this version? Any unsaved changes will be lost.')
+            if (!confirmed) return;
             try {
                   setIsGenerating(true);
-                  interval = setInterval(() => {
-                        fetchProject();
-                  }, 10000);
-                  const { data } = await api.post(`/api/project/revision/${project.id}`, { revision_prompt: input });
-                  fetchProject();
+                  const { data } = await api.get(`/api/project/rollback/${project.id}/${versionId}`);
+                  await fetchProject();
                   toast.success(data.message);
-                  setInput('');
-                  clearInterval(interval);
-                  setIsGenerating(false);
-            } catch (error:any) {   
-                  setIsGenerating(false);
-                  toast.error(error?.response?.data?.message || 'Failed to submit your request')
+            } catch (error: any) {
+                  toast.error(error?.response?.data?.message || 'Failed to restore this version')
                   console.log(error)
-                  clearInterval(interval);
+            } finally {
+                  setIsGenerating(false);
             }
-
       }
+
+      const handleRevision = async (e: React.FormEvent) => {
+            e.preventDefault();
+            const prompt = input.trim();
+            if (!prompt || isGenerating) return;
+
+            setIsGenerating(true);
+            setInput('');
+            // Show progress messages (enhanced prompt etc.) while the request is running
+            const interval = window.setInterval(fetchProject, 5000);
+            try {
+                  const { data } = await api.post(`/api/project/revision/${project.id}`, { revision_prompt: prompt });
+                  toast.success(data.message);
+            } catch (error: any) {
+                  toast.error(error?.response?.data?.message || 'Failed to apply your change')
+                  console.log(error)
+                  setInput(prompt);
+            } finally {
+                  window.clearInterval(interval);
+                  await fetchProject();
+                  setIsGenerating(false);
+            }
+      }
+
       const messagesEndRef = useRef<HTMLDivElement>(null);
 
       useEffect(() => {
-            if (messagesEndRef.current) {
-                  messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-            }
-      }, [project.conversation.length, isGenerating]);
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [project.conversation.length, project.versions.length, isGenerating]);
+
+      const timeline = [...project.conversation, ...project.versions]
+            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
       return (
-            <div className={`h-full sm:max-w-sm rounded-xl bg-gray-900 border-gray-800 transition-all ${isMenuOpen ? 'max-sm:w-0 overflow-hidden' : 'w-full'}`}>
-                  <div className="flex flex-col h-full">
+            <div className={`h-full shrink-0 transition-all ${isMenuOpen ? 'max-sm:w-0 overflow-hidden' : 'w-full'} sm:w-[380px]`}>
+                  <div className="flex h-full flex-col">
                         {/* Message Container */}
-                        <div className="flex-1 overflow-auto no-scrollbar px-3 flex flex-col gap-4">
-
-                              {[...project.conversation, ...project.versions]
-                                    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((message) => {
-                                          const isMessage = 'content' in message;
-
-                                          if (isMessage) {
-                                                const msg = message as Message;
-                                                const isUser = msg.role === 'user';
+                        <div className="no-scrollbar flex flex-1 flex-col gap-5 overflow-auto px-4 pb-4 pt-2">
+                              {timeline.map((item) => {
+                                    if ('content' in item) {
+                                          const msg = item as Message;
+                                          if (msg.role === 'user') {
                                                 return (
-                                                      <div key={msg.id} className={`flex items-start gap-3 ${isUser ? 'justify-end' : ''}`}>
-                                                            {!isUser && (
-                                                                  <div className="w-8 h-8 bg-linear-to-br from-indigo-600 to-indigo-700 rounded-full flex items-center justify-center text-white font-bold">
-                                                                        <BotIcon size={20} className="text-white" />
-                                                                  </div>
-                                                            )}
-                                                            <div className={`max-w-[80%] p-2 px-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap ${isUser ? 'bg-linear-to-br from-indigo-500 to-indigo-600text-white rounded-tr-none' : 'bg-gray-800 text-gray-100 rounded-tl-none'}`}>
-                                                                  {msg.content}
-                                                            </div>
-                                                            {isUser && (
-                                                                  <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white font-bold">
-                                                                        <UserIcon size={24} className="text-gray-200" />
-                                                                  </div>
-                                                            )}
+                                                      <div key={msg.id} className="ml-auto max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-tr-md border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm leading-relaxed text-slate-100">
+                                                            {msg.content}
                                                       </div>
                                                 )
                                           }
-                                          else {
-                                                const vr = message as Version;
-                                                return (
-                                                      <div key={vr.id} className="w-4/5 mx-auto my-2 p-3 rounded-xl bg-gray-800 text-gray-100 shadow flex flex-col">
-                                                            <div className="text-xs font-medium">
-                                                                  Code Updated <br />
-                                                                  <span className="text-gray-500 text-xs font-normal">
-                                                                        {new Date(vr.timestamp).toLocaleString()}
-                                                                  </span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between">
-                                                                  {project.current_version_index === vr.id ?
-                                                                        (<button className="px-3 py-1 rounded-md text-xs bg-gray-700">
-                                                                              Current Version
-                                                                        </button>) :
-                                                                        (<button onClick={() => handleRollback(vr.id)}
-                                                                              className="px-3 py-1 rounded-md text-xs bg-indigo-500 hover:bg-indigio-600 transition text-white">
-                                                                              Roll Back to this version
-                                                                        </button>)
-                                                                  }
-                                                                  <Link target="_blank" to={`/preview/${project.id}/${vr.id}`}>
-                                                                        <EyeIcon size={6} className="p-1
-                                                                  bg-gray-700 hover:bg-indigo-500 transition-colors rounded" />
-                                                                  </Link>
-                                                            </div>
-                                                      </div>
-                                                )
-                                          }
-                                    })}
+                                          return (
+                                                <div key={msg.id} className="flex items-start gap-3">
+                                                      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5">
+                                                            <SparklesIcon className="h-3.5 w-3.5 text-[#a5d8ff]" />
+                                                      </span>
+                                                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{msg.content}</p>
+                                                </div>
+                                          )
+                                    }
+
+                                    const vr = item as Version;
+                                    const isCurrent = project.current_version_index === vr.id;
+                                    return (
+                                          <div key={vr.id} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5">
+                                                <HistoryIcon className="h-4 w-4 shrink-0 text-slate-400" />
+                                                <div className="min-w-0 flex-1">
+                                                      <p className="text-xs font-medium text-slate-100">{isCurrent ? 'Current version' : 'Saved version'}</p>
+                                                      <p className="text-xs text-slate-400">{new Date(vr.timestamp).toLocaleString()}</p>
+                                                </div>
+                                                {!isCurrent && (
+                                                      <button
+                                                            onClick={() => handleRollback(vr.id)}
+                                                            disabled={isGenerating}
+                                                            className="rounded-full border border-white/15 px-3 py-1 text-xs text-slate-100 transition hover:bg-white/10 disabled:opacity-50"
+                                                      >
+                                                            Restore
+                                                      </button>
+                                                )}
+                                                <Link
+                                                      target="_blank"
+                                                      to={`/preview/${project.id}/${vr.id}`}
+                                                      aria-label="Preview this version in a new tab"
+                                                      title="Preview this version"
+                                                      className="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition hover:bg-white/10 hover:text-white"
+                                                >
+                                                      <EyeIcon className="h-4 w-4" />
+                                                </Link>
+                                          </div>
+                                    )
+                              })}
+
                               {isGenerating && (
-                                    <div className="flex items-start gap-3 justify-start">
-                                          <div className="w-8 h-8 bg-linear-to-br from-indigo-600 to-indigo-700 rounded-full flex items-center justify-center text-white font-bold">
-                                                <BotIcon size={5} className="text-white" />
+                                    <div className="flex items-center gap-3" aria-live="polite">
+                                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5">
+                                                <SparklesIcon className="h-3.5 w-3.5 text-[#a5d8ff]" />
+                                          </span>
+                                          <div className="flex gap-1.5">
+                                                <span className="size-1.5 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: '0s' }} />
+                                                <span className="size-1.5 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: '0.2s' }} />
+                                                <span className="size-1.5 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: '0.4s' }} />
                                           </div>
-                                          <div className="flex gap-1.5 h-full items-end">
-                                                <span className="size-2 rounded-full animate-bounce bg-gray-600" style={{ animationDelay: '0s' }} />
-                                                <span className="size-2 rounded-full animate-bounce bg-gray-600" style={{ animationDelay: '0.2s' }} />
-                                                <span className="size-2 rounded-full animate-bounce bg-gray-600" style={{ animationDelay: '0.4s' }} />
-                                          </div>
+                                          <span className="sr-only">Working on your request</span>
                                     </div>
                               )}
                               <div ref={messagesEndRef} />
                         </div>
 
                         {/* Input Area */}
-                        <form onSubmit={handleRevisions()}
-                              className="m-3 relative" >
-                              <div className="flex items-center gap-2">
-                                    <textarea onChange={(e) => { setInput(e.target.value) }} value={input}
-                                          rows={4} placeholder="Describe your website or request changes" className=" flex-1 p-3 rounded-xl resize-none text-sm outline-none ring ring-gray-700 focus:ring-indigo-500 bg-gray-800
-                                    text-gray-100 placeholder-gray-400 transition-all" disabled={isGenerating} />
-                                    <button disabled={isGenerating || input.trim() === ''}
-                                          className="absolute bottom-2.5 right-2.5   rounded-full bg-linear-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white transition-colors disable:opacity-60">
-                                          {isGenerating ?
-                                                <Loader2Icon className="animate-spin text-gray-400 size-7 p-1.5" /> :
-                                                <SendIcon size={24} className="text-gray-400 size-7 p-1.5" />
-                                          }
-                                    </button>
+                        <form onSubmit={handleRevision} className="p-3 pt-0">
+                              <div className="rounded-2xl border border-white/15 bg-white/[0.03] transition focus-within:border-[#a5d8ff]/50 focus-within:ring-2 focus-within:ring-[#a5d8ff]/20">
+                                    <textarea
+                                          onChange={(e) => setInput(e.target.value)}
+                                          onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                      e.preventDefault();
+                                                      e.currentTarget.form?.requestSubmit();
+                                                }
+                                          }}
+                                          value={input}
+                                          rows={3}
+                                          aria-label="Describe a change to your website"
+                                          placeholder={project.current_code ? "Describe a change, e.g. make the hero darker" : "Your website is being generated…"}
+                                          className="w-full resize-none bg-transparent px-4 pt-3 text-sm text-slate-100 outline-none placeholder:text-slate-500 disabled:cursor-not-allowed"
+                                          disabled={isGenerating || !project.current_code}
+                                    />
+                                    <div className="flex items-center justify-between px-3 pb-3">
+                                          <span className="text-xs text-slate-500">Each change uses 5 credits</span>
+                                          <button
+                                                type="submit"
+                                                aria-label="Send change request"
+                                                disabled={isGenerating || input.trim() === '' || !project.current_code}
+                                                className="grid h-8 w-8 place-items-center rounded-full bg-[#f6f8ff] text-black transition hover:bg-white disabled:bg-white/10 disabled:text-slate-500"
+                                          >
+                                                {isGenerating ? <Loader2Icon className="h-4 w-4 animate-spin" /> : <ArrowUpIcon className="h-4 w-4" />}
+                                          </button>
+                                    </div>
                               </div>
                         </form>
                   </div>
