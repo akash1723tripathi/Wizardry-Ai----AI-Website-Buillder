@@ -82,6 +82,11 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Legibility for light text sitting on the bright hero gradient */
+  .text-shadow-hero {
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.55), 0 0 28px rgb(2 6 23 / 0.55);
+  }
 }
 
 @keyframes fade-in{
@@ -98,6 +103,9 @@
 @layer base {
   * {
     @apply border-border;
+  }
+  html {
+    color-scheme: dark;
   }
   body {
     @apply bg-background text-foreground;
