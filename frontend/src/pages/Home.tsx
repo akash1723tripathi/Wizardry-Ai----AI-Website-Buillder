@@ -1,7 +1,6 @@
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import HeroSection from '../components/landing/HeroSection'
-import TrustedBrand from '../components/landing/TrustedBrand'
 import FeaturesSection from '../components/landing/FeaturesSection'
 import BuildProcess from '../components/landing/BuildProcess'
 import PricingSection from '../components/landing/PricingSection'
@@ -11,12 +10,12 @@ import LenisScroll from '../components/landing/LenisScroll'
 
 const Home = () => {
       return (
-            <div className="bg-white text-gray-800 text-sm antialiased min-h-screen">
+            <div className="bg-black text-slate-300 text-sm antialiased min-h-screen">
                   <LenisScroll />
                   <Navbar />
+                  {/* Hero sits outside <main> so its background can run edge to edge */}
+                  <HeroSection />
                   <main className="px-4 py-4 md:px-16 lg:px-24 xl:px-32">
-                        <HeroSection />
-                        <TrustedBrand />
                         <FeaturesSection />
                         <BuildProcess />
                         <PricingSection />
