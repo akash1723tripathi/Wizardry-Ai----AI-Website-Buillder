@@ -1,25 +1,19 @@
 import { Request, Response } from 'express';
 import prisma from "../lib/prisma.js";
-import openai from "../config/openAi.js";
-import { versions } from 'node:process';
+import { extractHtml, generateCompletion, looksLikeHtml } from "../config/openAi.js";
+import { CREDITS_PER_GENERATION } from "../config/plans.js";
 
 
 //Controller Function to make revisions
 export const makeRevision = async (req: Request, res: Response) => {
       const UserId = req.UserId;
+      const { projectId } = req.params;
+      // Only refund if the credits were actually taken
+      let charged = false;
       try {
-            const { projectId } = req.params;
             const { revision_prompt } = req.body;
-            const user = await prisma.user.findUnique({
-                  where: { id: UserId }
-            })
-
-            if (!UserId || !user) {
+            if (!UserId) {
                   return res.status(401).json({ message: "Unauthorized" })
-            }
-
-            if (user.credits < 5) {
-                  return res.status(403).json({ message: "Not enough credits" })
             }
 
             if (!revision_prompt || revision_prompt.trim() === "") {
@@ -27,13 +21,26 @@ export const makeRevision = async (req: Request, res: Response) => {
             }
 
             const currentProject = await prisma.websiteProject.findUnique({
-                  where: { id: projectId as string, userId: UserId },
-                  include: { versions: true }
+                  where: { id: projectId as string, userId: UserId }
             })
 
             if (!currentProject) {
                   return res.status(404).json({ message: "Project not found" })
             }
+
+            if (!currentProject.current_code) {
+                  return res.status(400).json({ message: "Wait for your website to finish generating before requesting changes" })
+            }
+
+            // Spend atomically so simultaneous requests can't overdraw the balance
+            const spend = await prisma.user.updateMany({
+                  where: { id: UserId, credits: { gte: CREDITS_PER_GENERATION } },
+                  data: { credits: { decrement: CREDITS_PER_GENERATION } }
+            })
+            if (spend.count === 0) {
+                  return res.status(403).json({ message: "Not enough credits" })
+            }
+            charged = true;
 
             await prisma.conversation.create({
                   data: {
@@ -43,45 +50,35 @@ export const makeRevision = async (req: Request, res: Response) => {
                   }
             })
 
-            await prisma.user.update({
-                  where: { id: UserId },
-                  data: {
-                        credits: { decrement: 5 }
+            //To enhance user prompt (optional: falls back to the user's own words)
+            const enhancedPrompt = await generateCompletion([
+                  {
+                        role: "system",
+                        content: `
+                        You are a prompt enhancement specialist. The user wants to make changes to their website. Enhance their request to be more specific and actionable for a web developer.
+
+                        Enhance this by:
+                        1. Being specific about what elements to change
+                        2. Mentioning design details (colors, spacing, sizes)
+                        3. Clarifying the desired outcome
+                        4. Using clear technical terms
+
+                        Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).`
+                  }, {
+                        role: "user",
+                        content: `User's request: "${revision_prompt}"`
                   }
-            })
+            ], { maxTokens: 1500 }).catch(() => null)
 
-            //To enhacne user prompt
-            const promptEnhanceResponse = await openai.chat.completions.create({
-                  model: "tngtech/deepseek-r1t2-chimera:free",
-                  messages: [
-                        {
-                              role: "system",
-                              content: `
-                              You are a prompt enhancement specialist. The user wants to make changes to their website. Enhance their request to be more specific and actionable for a web developer.
-
-                              Enhance this by:
-                              1. Being specific about what elements to change
-                              2. Mentioning design details (colors, spacing, sizes)
-                              3. Clarifying the desired outcome
-                              4. Using clear technical terms
-
-                              Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).`
-                        }, {
-                              role: "user",
-                              content: ` User's request "${revision_prompt}" `
+            if (enhancedPrompt) {
+                  await prisma.conversation.create({
+                        data: {
+                              role: "assistant",
+                              content: `I have enhanced your prompt to "${enhancedPrompt}"`,
+                              projectId: projectId as string
                         }
-                  ]
-            })
-
-            const enhancedPrompt = promptEnhanceResponse.choices[0].message.content;
-
-            await prisma.conversation.create({
-                  data: {
-                        role: "assistant",
-                        content: `I have enhanced your prompt to "${enhancedPrompt}"`,
-                        projectId: projectId as string
-                  }
-            })
+                  })
+            }
 
             await prisma.conversation.create({
                   data: {
@@ -92,55 +89,31 @@ export const makeRevision = async (req: Request, res: Response) => {
             })
 
             //Generate website code
-            const codeGenerationResponse = await openai.chat.completions.create({
-                  model: "tngtech/deepseek-r1t2-chimera:free",
-                  messages: [
-                        {
-                              role: "system",
-                              content: `
-                              You are an expert web developer. 
+            const rawCode = await generateCompletion([
+                  {
+                        role: "system",
+                        content: `
+                        You are an expert web developer.
 
-                              CRITICAL REQUIREMENTS:
-                              - Return ONLY the complete updated HTML code with the requested changes.
-                              - Use Tailwind CSS for ALL styling (NO custom CSS).
-                              - Use Tailwind utility classes for all styling changes.
-                              - Include all JavaScript in <script> tags before closing </body>
-                              - Make sure it's a complete, standalone HTML document with Tailwind CSS
-                              - Return the HTML Code Only, nothing else
+                        CRITICAL REQUIREMENTS:
+                        - Return ONLY the complete updated HTML document, starting with <!DOCTYPE html> and ending with </html>.
+                        - Keep everything the user did not ask to change.
+                        - Use Tailwind CSS utility classes for all styling changes (NO custom CSS).
+                        - Include all JavaScript in <script> tags before closing </body>
+                        - Make sure it's a complete, standalone HTML document with Tailwind CSS
 
-                              Apply the requested changes while maintaining the Tailwind CSS styling approach.`
-                        }, {
-                              role: "user",
-                              content: ` Here's the current website code "${currentProject.current_code}" The user wants this change :"${enhancedPrompt}" `
-                        }
-                  ]
-            })
+                        Do NOT include markdown, explanations, notes, or code fences.`
+                  }, {
+                        role: "user",
+                        content: `Here's the current website code:\n${currentProject.current_code}\n\nThe user wants this change: ${enhancedPrompt || revision_prompt}`
+                  }
+            ], { maxTokens: 16000, accept: looksLikeHtml })
 
-            const code = codeGenerationResponse.choices[0].message.content || '';
-
-            if (!code) {
-                  await prisma.conversation.create({
-                        data: {
-                              role: "assistant",
-                              content: `Unable to generate the code, Please try again`,
-                              projectId: projectId as string
-                        }
-                  })
-
-                  await prisma.user.update({
-                        where: { id: UserId },
-                        data: {
-                              credits: { increment: 5 }
-                        }
-                  })
-                  return;
-            }
-
-
+            const code = extractHtml(rawCode);
 
             const version = await prisma.version.create({
                   data: {
-                        code: code.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim(),
+                        code,
                         description: 'Changes made',
                         projectId: projectId as string
                   }
@@ -157,21 +130,28 @@ export const makeRevision = async (req: Request, res: Response) => {
             await prisma.websiteProject.update({
                   where: { id: projectId as string },
                   data: {
-                        current_code: code.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim(),
+                        current_code: code,
                         current_version_index: version.id
                   }
             })
 
-            res.json({ message: "changes made successfully" })
+            res.json({ message: "Changes made successfully" })
       }
       catch (error: any) {
-            await prisma.user.update({
-                  where: { id: UserId },
-                  data: {
-                        credits: { increment: 5 }
-                  }
-            })
             console.log(error.code || error.message);
+            if (charged) {
+                  await prisma.user.update({
+                        where: { id: UserId },
+                        data: { credits: { increment: CREDITS_PER_GENERATION } }
+                  }).catch(() => {})
+                  await prisma.conversation.create({
+                        data: {
+                              role: "assistant",
+                              content: `I couldn't apply that change. ${error.message || ''} Your ${CREDITS_PER_GENERATION} credits have been refunded.`,
+                              projectId: projectId as string
+                        }
+                  }).catch(() => {})
+            }
             res.status(500).json({ message: error.message })
       }
 }
