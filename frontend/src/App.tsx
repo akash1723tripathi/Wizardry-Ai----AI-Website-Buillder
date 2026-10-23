@@ -8,7 +8,7 @@ import View from "./pages/View"
 import MyProjects from "./pages/MyProjects"
 import { Toaster } from "@/components/ui/sonner"
 import AuthPage from "./pages/auth/AuthPage"
-import Loading from "./pages/Loading"
+import PaymentSuccess from "./pages/PaymentSuccess"
 import { AnimatePresence } from "framer-motion"
 
 
@@ -34,7 +34,7 @@ function App() {
         <Route path="/login" element={<AuthPage />} />
         <Route path="/sign-in" element={<AuthPage />} />
         <Route path="/sign-up" element={<AuthPage />} />
-        <Route path="/loading" element={<Loading />} />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
       </Routes>
       </AnimatePresence>
     </>

@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import { extractHtml, generateCompletion, GENERATION_FAILED_MESSAGE, looksLikeHtml } from "../config/openAi.js";
-import { CREDITS_PER_GENERATION } from "../config/plans.js";
-import Stripe from "stripe";
+import { isPlanId, PLANS, CREDITS_PER_GENERATION } from "../config/plans.js";
+import { APP_ID, fulfillTransaction, getPaidTransactionId, getStripe } from "../lib/payments.js";
 
 // Get user Credits
 export const getUserCredits = async (req: Request, res: Response) => {
@@ -290,68 +290,103 @@ export const togglePublish = async (req: Request, res: Response) => {
 
 
 //Controller function to purchase credits
-
 export const purchaseCredits = async (req: Request, res: Response) => {
       try {
-            interface Plan {
-                  credits: number;
-                  amount: number;
-            }
-
-            const plans = {
-                  Basic: { credits: 100, amount: 5 },
-                  Pro: { credits: 400, amount: 19 },
-                  Enterprise: { credits: 1000, amount: 49 },
-            }
-
             const UserId = req.UserId;
             if (!UserId) {
                   return res.status(401).json({ message: "Unauthorized" })
             }
 
-            const {planId} = req.body as { planId: keyof typeof plans };
-            const origin = req.headers.origin as string;
-
-            const plan: Plan = plans[planId]
-            if (!plan) {
+            const { planId } = req.body;
+            if (!isPlanId(planId)) {
                   return res.status(404).json({ message: "Plan not found" })
             }
+            const plan = PLANS[planId];
+
+            // Stripe redirects back to the page that started checkout
+            const origin = (req.headers.origin as string) || process.env.TRUSTED_ORIGINS?.split(',')[0]?.trim();
 
             const transaction = await prisma.transaction.create({
                   data: {
-                        userId: UserId!,
-                        planId: req.body.planId,
+                        userId: UserId,
+                        planId,
                         amount: plan.amount,
                         credits: plan.credits,
                   }
             })
 
-            const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
-            const session = await stripe.checkout.sessions.create({
-                  success_url: `${origin}/loading`,
-                  cancel_url: `${origin}`,
+            const session = await getStripe().checkout.sessions.create({
+                  success_url: `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+                  cancel_url: `${origin}/pricing`,
+                  client_reference_id: UserId,
                   line_items: [
                         {
                               price_data: {
                                     currency: 'usd',
-                                    product_data: { name:` Wizardry AI - ${plan.credits} Credits` },
-                                    unit_amount: Math.floor(transaction.amount) * 100
+                                    product_data: { name: `Wizardry AI ${plan.name} - ${plan.credits} credits` },
+                                    unit_amount: Math.round(plan.amount * 100)
                               },
                               quantity: 1
                         }
                   ],
                   mode: 'payment',
-                  metadata:{
+                  metadata: {
                         transactionId: transaction.id,
-                        appId: 'wizardry-ai'
+                        userId: UserId,
+                        appId: APP_ID
                   },
-                  expires_at: Math.floor(Date.now() / 1000) + (30 * 60) 
+                  expires_at: Math.floor(Date.now() / 1000) + (30 * 60)
+            }, {
+                  // A retried request for the same transaction can never open a second checkout
+                  idempotencyKey: `checkout-${transaction.id}`
             });
 
             res.json({ payment_link: session.url });
 
       } catch (error: any) {
             console.log(error.code || error.message);
-            res.status(500).json({ message: error.message })      
+            res.status(500).json({ message: error.message })
+      }
+}
+
+// Called by the payment success page. Stripe webhooks can't reach localhost without the
+// Stripe CLI, and can arrive late in production, so the page asks Stripe directly too.
+// Both paths share fulfillTransaction, which credits each transaction only once.
+export const verifyPayment = async (req: Request, res: Response) => {
+      try {
+            const UserId = req.UserId;
+            if (!UserId) {
+                  return res.status(401).json({ message: "Unauthorized" })
+            }
+
+            const { sessionId } = req.body;
+            if (!sessionId || typeof sessionId !== 'string' || !sessionId.startsWith('cs_')) {
+                  return res.status(400).json({ message: "Missing checkout session" })
+            }
+
+            const session = await getStripe().checkout.sessions.retrieve(sessionId);
+            if (session.metadata?.userId !== UserId) {
+                  return res.status(404).json({ message: "Payment not found" })
+            }
+
+            const transactionId = getPaidTransactionId(session);
+            const user = await prisma.user.findUnique({ where: { id: UserId }, select: { credits: true } });
+
+            if (!transactionId) {
+                  return res.json({ status: 'pending', credits: user?.credits ?? 0 });
+            }
+
+            const result = await fulfillTransaction(transactionId);
+            const transaction = await prisma.transaction.findUnique({ where: { id: transactionId } });
+            const updated = await prisma.user.findUnique({ where: { id: UserId }, select: { credits: true } });
+
+            res.json({
+                  status: result === 'not_found' ? 'not_found' : 'paid',
+                  creditsAdded: transaction?.credits ?? 0,
+                  credits: updated?.credits ?? 0,
+            });
+      } catch (error: any) {
+            console.log(error.code || error.message);
+            res.status(500).json({ message: error.message })
       }
 }
