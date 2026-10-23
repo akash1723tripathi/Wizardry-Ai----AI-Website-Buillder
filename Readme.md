@@ -1,123 +1,192 @@
 # 🚀 Wizardry AI: The Future of Web Development
 
-![Project Status](https://img.shields.io/badge/Status-Production%20Ready-success?style=for-the-badge)
+[![CI](https://github.com/akash1723tripathi/Wizardry-Ai----AI-Website-Buillder/actions/workflows/ci.yml/badge.svg)](https://github.com/akash1723tripathi/Wizardry-Ai----AI-Website-Buillder/actions/workflows/ci.yml)
 ![Tech Stack](https://img.shields.io/badge/Stack-PERN-blue?style=for-the-badge)
 
+**Turn your ideas into fully functional, responsive websites in minutes.**
 
-**Turn your wildest ideas into fully functional, responsive websites in seconds.**
+**Wizardry AI** is a full-stack platform that lets anyone build a website by describing it in plain English. Large Language Models accessed through **OpenRouter** write the site as a single HTML page styled with Tailwind CSS. You then refine it by chatting with the AI, editing elements visually, or restoring an earlier version, and publish it to a public community gallery.
 
-The **Wizardry AI** is a revolutionary full-stack platform that democratizes web development. Powered by state-of-the-art Large Language Models (LLMs) via **OpenRouter**, this application allows users to generate production-ready websites simply by describing them in plain English. Beyond generation, it features a sophisticated **No-Code/Low-Code Editor**, allowing granular control over every DOM element, style, and layout—bridging the gap between AI automation and human creativity.
-
-Designed with a scalable **PERN Stack** (PostgreSQL, Express, React, Node.js) and integrated with **Stripe** for monetization, this project represents a complete SaaS solution ready for the real world.
+It is built on the **PERN stack** (PostgreSQL, Express, React, Node.js) with **Stripe** for buying credits.
 
 ---
 
 ## 🌟 Key Features
 
 ### 🧠 **Generative AI Core**
-* **Prompt-to-Website Engine**: Transforms natural language inputs into complex, multi-section HTML/CSS structures using advanced prompt engineering and context-aware AI models.
-* **AI-Powered Iterations**: Don't like a section? Simply ask the AI to "change the navbar to dark mode" or "replace the hero image," and watch the code update instantly.
-* **Version Control System**: Built-in rollback functionality allows users to travel back in time to previous iterations of their design, ensuring no creative experiment is ever lost.
 
-### 🎨 **Advanced Visual Editor**
-* **Interactive DOM Manipulation**: Click any element on the generated preview to open a powerful property editor.
-* **Granular Styling Control**: Manually tweak padding, margins, colors, fonts, and Tailwind classes without touching a line of code.
-* **Real-time Preview**: See changes instantly with a split-screen view offering Desktop, Tablet, and Mobile viewports.
+* **Prompt-to-website**: Describe a site and the AI writes a complete, responsive HTML page with Tailwind CSS.
+* **Chat to change it**: Ask for edits like "make the hero darker" or "add a pricing section" and the page is rewritten.
+* **Version history**: Every generation is saved as a version you can preview or restore.
+* **Reliable generation**: Requests go through a chain of fallback models with automatic retries. If generation still fails, the user sees why and the credits are refunded.
 
-### 💼 **SaaS & Community Features**
-* **Credit-Based Economy**: Integrated **Stripe** payment gateway allows users to purchase credits for generating and updating projects.
-* **Authentication System**: Secure user management (Sign Up/Login) powered by **Better-Auth**.
-* **Public Community Showcase**: Users can publish their creations to a community gallery, fostering inspiration and collaboration.
-* **Source Code Export**: One-click download of the generated project as a clean, deployable `index.html` file.
+### 🎨 **Builder**
+
+* **Click-to-edit**: Select any element in the preview to change its text, spacing, colours and font size.
+* **Device preview**: Switch between desktop, tablet and phone viewports.
+* **Live progress**: See which stage generation is at, and how long it has been running.
+* **Export**: Download the site as a single `index.html` file.
+
+### 🌍 **Community**
+
+* **Publish**: One click shares a site in the public community gallery, shown on the home page and at `/community`.
+* **Public pages**: Each published site has its own page at `/view/:id`, showing who built it.
+* **Safe rendering**: Community sites run in a sandboxed iframe without same-origin access, so a published page cannot act on the visitor's account.
+
+### 💳 **Credits & Payments**
+
+* **Credits**: Every new website and every change costs **5 credits**. New accounts start with **20 free**, and credits never expire.
+* **Plans**: One-time packs, **Pro: $5 for 50 credits** and **Plus: $49 for 500 credits**.
+* **Stripe Checkout**: Payments are confirmed both by webhook and from the success page. Each payment is credited exactly once, even if Stripe retries the webhook.
+* **Authentication**: Email and password accounts powered by **Better Auth**.
 
 ---
 
 ## 🛠️ Tech Stack
 
-This project leverages a modern, high-performance stack designed for scalability and developer experience.
-
 ### **Frontend**
-* **React (Vite)**: For lightning-fast development and optimized production builds.
-* **TypeScript**: Ensuring type safety and code reliability across the entire codebase.
-* **Tailwind CSS**: For rapid, utility-first styling and responsive design.
-* **Shadcn UI**: For accessible, high-quality UI components.
-* **Lucide React**: For beautiful, consistent iconography.
 
+* **React 18 + Vite** with **TypeScript**
+* **Tailwind CSS** for styling, with a few **Radix UI**/shadcn components (dropdown menu, avatar)
+* **Framer Motion** and **Lenis** for motion and smooth scrolling
+* **Lucide React** icons
+* **GradientASCII** (React Bits) WebGL background on the hero
 
 ### **Backend**
-* **Node.js & Express**: A robust, event-driven architecture handling API requests and AI orchestration.
-* **PostgreSQL (Neon DB)**: A serverless, scalable relational database for storing user data, projects, and transaction history.
-* **Prisma ORM**: For type-safe database access and schema management.
-* **Better-Auth**: For secure, uncompromising authentication flows.
 
-### **AI & Third-Party Services**
-* **OpenRouter API**: Accessing top-tier LLMs (like GLM-4, Claude 3.5, or Llama 3) for code generation.
-* **Stripe**: Secure payment processing for the credit system.
-* **Render**: Production deployment environment.
+* **Node.js & Express 5**
+* **PostgreSQL** (works with Neon) through **Prisma ORM**
+* **Better Auth** for sessions
+* **Stripe** for payments
+
+### **AI**
+
+* **OpenRouter** through the OpenAI SDK. By default it uses free models, which you can change with `AI_MODELS`.
 
 ---
 
-## 🏗️ Architecture & Workflow
+## 🏗️ How It Works
 
-1.  **User Input**: The user enters a prompt (e.g., "Build a portfolio for a photographer").
-2.  **Prompt Enhancement**: The backend intercepts the prompt and uses an LLM to "enhance" it, adding technical details and design constraints to ensure high-quality output.
-3.  **Code Generation**: The enhanced prompt is fed into a coding-specialized LLM, which streams back semantic HTML and Tailwind CSS.
-4.  **Database Transaction**: The generated code, user credits, and project metadata are securely stored in PostgreSQL via Prisma.
-5.  **Live Rendering**: The frontend dynamically renders the raw code in a sandboxed iframe, providing an instant preview.
-6.  **Iterative Refinement**: Subsequent user prompts or manual edits trigger database updates and re-renders, creating a seamless feedback loop.
+1. **Prompt**: The user describes a website. 5 credits are deducted in a single atomic database update, so simultaneous requests can never overdraw the balance.
+2. **Enhancement**: An LLM expands the prompt into a detailed design brief. This step is optional; if it fails, generation continues with the original prompt.
+3. **Generation**: A model writes the complete HTML document in the background while the builder shows progress. Answers that are cut off or are not a full HTML page are rejected, and the next model is tried.
+4. **Storage**: The code is saved in PostgreSQL as the project's current version. If every model fails, the failure is recorded in the chat and the credits are refunded.
+5. **Refinement**: Chat requests and visual edits create new versions, and any version can be restored.
+6. **Publishing**: Published sites appear in the community gallery and on their own public page.
 
 ---
 
 ## 🚀 Getting Started
 
-Follow these steps to set up the project locally.
-
 ### Prerequisites
-* Node.js (v18+)
-* PostgreSQL (Local or Neon DB connection string)
-* Stripe Account (for payments)
-* OpenRouter API Key (for AI generation)
 
-1.  **Clone the Repository**
-    ```bash
-    git clone [https://github.com/akash1723tripathi/AI-Website-Buillder.git](https://github.com/akash1723tripathi/AI-Website-Buillder.git)
-    cd AI-Website-Buillder
-    ```
+* Node.js 20+
+* A PostgreSQL database (local or a Neon connection string)
+* An OpenRouter API key
+* A Stripe account in test mode (only needed for buying credits)
 
-2.  **Setup Backend and Start **
-    ```bash
-    cd backend
-    npm install
-    npx prisma generate
-    npm run dev
-    ```
+### 1. Clone the repository
 
-3.  **Setup Frontend**
-    ```bash
-    cd ../frontend
-    npm install
-    npm run dev
-    ```
+```bash
+git clone https://github.com/akash1723tripathi/Wizardry-Ai----AI-Website-Buillder.git
+cd Wizardry-Ai----AI-Website-Buillder
+```
 
-### Environment Variables
+### 2. Configure environment variables
 
-Create a `.env` file in the **backend** directory:
+Create `backend/.env`:
+
 ```env
 PORT=3000
-DATABASE_URL="postgresql://user:password@host:port/dbname"
-BETTER_AUTH_SECRET="your_auth_secret"
+NODE_ENV=development
+DATABASE_URL="postgresql://user:password@host:5432/dbname"
+
+BETTER_AUTH_SECRET="a-long-random-string"
 BETTER_AUTH_URL="http://localhost:3000"
-AI_API_KEY="your_openrouter_api_key"
-STRIPE_SECRET_KEY="your_stripe_secret_key"
-STRIPE_WEBHOOK_SECRET="your_stripe_webhook_secret"
+# Comma-separated origins allowed to call the API (the frontend dev server)
 TRUSTED_ORIGINS="http://localhost:5173"
+
+# OpenRouter key (the variable name comes from the OpenAI SDK used to call it)
+OPENAI_API_KEY="sk-or-..."
+# Optional: comma-separated OpenRouter models to try in order
+# AI_MODELS="cohere/north-mini-code:free,nvidia/nemotron-3.5-lightning:free"
+
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
 ```
 
-Create a `.env` file in the *frontend** directory:
+Create `frontend/.env`:
+
 ```env
-VITE_BASE_URL="http://localhost:3000"
+VITE_BASEURL="http://localhost:3000"
 ```
+
+### 3. Start the backend
+
+```bash
+cd backend
+npm install
+npx prisma migrate deploy   # create the database tables
+npx prisma generate         # generate the Prisma client
+npm run dev                 # http://localhost:3000
+```
+
+### 4. Start the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev                 # http://localhost:5173
+```
+
+### Stripe webhooks
+
+Credits are confirmed from the payment success page, so purchases work locally without any webhook setup. In production, add a webhook endpoint pointing to `https://<your-api>/api/stripe` with these events:
+
+* `checkout.session.completed`
+* `checkout.session.async_payment_succeeded`
+
+To test webhooks locally, use the [Stripe CLI](https://docs.stripe.com/stripe-cli):
+
+```bash
+stripe listen --forward-to localhost:3000/api/stripe
+```
+
+---
+
+## 🧪 Checks & CI
+
+GitHub Actions runs on every pull request and on every push to `main`:
+
+| Job | What it runs |
+| --- | --- |
+| Frontend build | `npm ci` then `npm run build`, which type-checks before bundling |
+| Backend type check | `npm ci`, `npx prisma generate`, then `npx tsc --noEmit` |
+
+Run the same checks locally:
+
+```bash
+(cd frontend && npm run build)
+(cd backend && npx tsc --noEmit -p .)
+```
+
+---
+
+## 📁 Project Structure
+
+```text
+backend/
+  config/       AI model chain (openAi.ts) and credit plans (plans.ts)
+  controllers/  Projects, revisions, users, payments and the Stripe webhook
+  lib/          Better Auth, Prisma client and payment fulfilment
+  prisma/       Database schema and migrations
+  routes/       /api/user and /api/project routes
+frontend/
+  src/pages/        Home, builder (Projects), community, public view, pricing, auth
+  src/components/   Landing sections, builder panels, community cards, navbar
+  src/lib/          Auth client, plans, generation state and community helpers
+```
+
 ---
 
 Made with ❤️ by Akash Tripathi
-
