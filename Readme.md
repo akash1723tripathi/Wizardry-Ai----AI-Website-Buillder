@@ -1,7 +1,8 @@
-# 🚀 Wizardry AI: The Future of Web Development
+# 🚀 Wizardry AI: Prompt to Website Builder 
 
-[![CI](https://github.com/akash1723tripathi/Wizardry-Ai----AI-Website-Buillder/actions/workflows/ci.yml/badge.svg)](https://github.com/akash1723tripathi/Wizardry-Ai----AI-Website-Buillder/actions/workflows/ci.yml)
 ![Tech Stack](https://img.shields.io/badge/Stack-PERN-blue?style=for-the-badge)
+<img width="1877" height="1017" alt="image" src="https://github.com/user-attachments/assets/3ed3da37-d8f4-4fa9-9bd8-03f42f1870fb" />
+
 
 **Turn your ideas into fully functional, responsive websites in minutes.**
 
