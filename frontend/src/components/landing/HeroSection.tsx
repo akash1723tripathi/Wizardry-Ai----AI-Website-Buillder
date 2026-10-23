@@ -137,15 +137,15 @@ export default function HeroSection() {
             <div className="relative z-10 flex w-full flex-col items-center">
                 <div className="flex items-center gap-2 text-slate-100 mt-12 text-shadow-hero">
                     <TrendingUpIcon className="w-4.5 h-4.5" />
-                    <span>Trusted by 2,000+ founders</span>
+                    <span>Trusted by 20+ users</span>
                 </div>
 
                 <h1 className="text-center text-4xl sm:text-5xl md:text-[60px] lg:text-[64px] md:leading-[80px] leading-[54px] font-semibold max-w-4xl m-2 text-white md:whitespace-nowrap text-shadow-hero">
                     Build custom apps with AI
                 </h1>
 
-                <p className="text-center text-base text-slate-100 max-w-md mt-2 text-shadow-hero">
-                    &ldquo;No code. No design skills. Just describe your idea and launch instantly.&rdquo;
+                <p className="text-center text-base text-slate-100 max-w-2xl mt-2 text-shadow-hero">
+                    No code, no design, no design skill. Just describe your idea and launch instantly.
                 </p>
 
                 <form onSubmit={handleSubmit} className="focus-within:ring-2 focus-within:ring-[#a5d8ff]/50 border border-white/15 bg-black/60 backdrop-blur-md shadow-[0_0_60px_-15px_rgba(56,189,248,0.35)] rounded-xl max-w-2xl w-full mt-8">
