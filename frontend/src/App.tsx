@@ -25,6 +25,7 @@ function App() {
         <Route path="/projects" element={<MyProjects />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/preview/:projectId" element={<Preview />} />
+        <Route path="/preview/:projectId/:versionId" element={<Preview />} />
         <Route path="/view/:projectId" element={<Preview />} />
         <Route path="/community" element={<Community />} />
         <Route path="/auth/:pathname" element={<AuthPage />} />
