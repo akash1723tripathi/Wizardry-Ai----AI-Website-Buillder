@@ -249,12 +249,23 @@ export const getProjectPreview = async (req: Request, res: Response) => {
       }
 }
 
-//GetPublished Projects
+//GetPublished Projects (public: only expose what the community page shows)
 export const getPublishedProjects = async (req: Request, res: Response) => {
       try {
+            const limit = Math.min(Math.max(Number(req.query.limit) || 60, 1), 100);
             const projects = await prisma.websiteProject.findMany({
-                  where: { isPublished: true },
-                  include: { user: true }
+                  where: { isPublished: true, current_code: { not: null } },
+                  orderBy: { updatedAt: 'desc' },
+                  take: limit,
+                  select: {
+                        id: true,
+                        name: true,
+                        initial_prompt: true,
+                        current_code: true,
+                        createdAt: true,
+                        updatedAt: true,
+                        user: { select: { name: true } }
+                  }
             })
             res.json({ projects });
       }
@@ -264,20 +275,26 @@ export const getPublishedProjects = async (req: Request, res: Response) => {
       }
 }
 
-//Controller to a Get a singleproject bt id
+//Controller to a Get a single published project by id
 export const getProjectById = async (req: Request, res: Response) => {
       try {
             const { projectId } = req.params;
 
             const project = await prisma.websiteProject.findFirst({
-                  where: { id: projectId as string }
+                  where: { id: projectId as string },
+                  select: {
+                        name: true,
+                        isPublished: true,
+                        current_code: true,
+                        user: { select: { name: true } }
+                  }
             })
 
             if (!project || project.isPublished === false || !project?.current_code) {
                   return res.status(404).json({ message: "Project not found" })
             }
 
-            res.json({ code: project.current_code });
+            res.json({ code: project.current_code, name: project.name, author: project.user?.name });
       }
       catch (error: any) {
             console.log(error.code || error.message);
