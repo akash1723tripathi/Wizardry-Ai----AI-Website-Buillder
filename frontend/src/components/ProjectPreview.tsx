@@ -3,6 +3,7 @@ import type { Project } from "../types";
 import { iframeScript } from "../assets/assets";
 import EditorPanel from "./EditorPanel";
 import LoaderSteps from "./LoaderSteps";
+import { Loader2Icon } from "lucide-react";
 
 export interface ProjectPreviewRef {
       getCode: () => string | undefined;
@@ -13,9 +14,12 @@ interface ProjectPreviewProps {
       isGenerating: boolean;
       device?: 'desktop' | 'mobile' | 'tablet';
       showEditorPanel?: boolean;
+      variant?: 'builder' | 'plain';
+      onRetry?: () => void;
+      retrying?: boolean;
 }
 
-const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(({ project, isGenerating, device = 'desktop', showEditorPanel = true }, ref) => {
+const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(({ project, isGenerating, device = 'desktop', showEditorPanel = true, variant = 'builder', onRetry, retrying }, ref) => {
 
       const iframeRef = useRef<HTMLIFrameElement>(null);
       const [selectedElement,setSelectedElement] = useState<any>(null)
@@ -91,35 +95,49 @@ const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(({ pro
             }
       }
 
-      return (
-            <>
-                  <div className="relative h-full bg-gray-900 flex-1 rounded-xl overflow-hidden max-sm:ml-2 border-2">
-                        {project.current_code ? (
-                              <>
-                                    <iframe
-                                          ref={iframeRef}
-                                          srcDoc={injectPreview(project.current_code)}
-                                          className={`h-full max-sm:w-full ${resolutions[device]} mx-auto transition-all`}
-                                    />
-                                    {showEditorPanel && selectedElement && (
-                                          <EditorPanel selectedElement={selectedElement} onUpdate={handleUpdate} onClose={() => {
-                                                setSelectedElement(null);
-                                                if(iframeRef.current?.contentWindow){
-                                                      iframeRef.current.contentWindow.postMessage({type:'CLEAR_SELECTION_REQUEST'},'*'); 
-                                                }
-                                          }}/>
-                                    )}
-                              </>
-                        ) :
-                              isGenerating && (
-                                    <div>
-                                          <LoaderSteps />
-                                    </div>
-                              )
-                        }
-                  </div>
+      // "plain" is the full-screen preview page: just the site, no builder chrome
+      if (variant === 'plain') {
+            return (
+                  <iframe
+                        ref={iframeRef}
+                        title="Website preview"
+                        srcDoc={injectPreview(project.current_code)}
+                        className="h-full w-full border-0 bg-white"
+                  />
+            )
+      }
 
-            </>
+      return (
+            <div className="relative h-full flex-1 overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:18px_18px] max-sm:ml-2">
+                  {project.current_code ? (
+                        <div className={`flex h-full justify-center ${device === 'desktop' ? '' : 'p-4'}`}>
+                              <iframe
+                                    ref={iframeRef}
+                                    title="Website preview"
+                                    srcDoc={injectPreview(project.current_code)}
+                                    className={`h-full max-sm:w-full ${resolutions[device]} bg-white transition-[width] duration-300 ${device === 'desktop' ? '' : 'rounded-xl border border-white/15 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)]'}`}
+                              />
+                              {isGenerating && (
+                                    <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
+                                          <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/80 px-4 py-2 text-sm text-slate-100 shadow-lg backdrop-blur-md">
+                                                <Loader2Icon className="h-4 w-4 animate-spin text-[#a5d8ff]" />
+                                                Applying your changes…
+                                          </div>
+                                    </div>
+                              )}
+                              {showEditorPanel && selectedElement && (
+                                    <EditorPanel selectedElement={selectedElement} onUpdate={handleUpdate} onClose={() => {
+                                          setSelectedElement(null);
+                                          if(iframeRef.current?.contentWindow){
+                                                iframeRef.current.contentWindow.postMessage({type:'CLEAR_SELECTION_REQUEST'},'*');
+                                          }
+                                    }}/>
+                              )}
+                        </div>
+                  ) : (
+                        <LoaderSteps project={project} onRetry={onRetry} retrying={retrying} />
+                  )}
+            </div>
       )
 })
 
