@@ -161,7 +161,8 @@ const Projects = () => {
 
   return (
     <PageTransition>
-      <div className='flex h-screen w-full flex-col bg-black text-white'>
+      {/* Locked to the viewport: only the chat and the site preview scroll */}
+      <div className='flex h-dvh w-full flex-col overflow-hidden bg-black text-white'>
         {/* Builder control bar */}
         <header className='flex items-center gap-3 border-b border-white/10 px-3 py-2.5 sm:px-4'>
           {/* left */}
@@ -253,7 +254,7 @@ const Projects = () => {
             isGenerating={isGenerating}
             setIsGenerating={setIsRevising}
           />
-          <div className={`min-w-0 flex-1 ${showPreview ? '' : 'max-sm:hidden'}`}>
+          <div className={`h-full min-h-0 min-w-0 flex-1 ${showPreview ? '' : 'max-sm:hidden'}`}>
             <ProjectPreview
               ref={projectPreviewRef}
               project={project}

@@ -67,20 +67,22 @@ const Sidebar = ({ isMenuOpen, project, setProject, isGenerating, setIsGeneratin
             }
       }
 
-      const messagesEndRef = useRef<HTMLDivElement>(null);
+      const messagesRef = useRef<HTMLDivElement>(null);
 
       useEffect(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            // Scroll only the chat; scrollIntoView would also scroll the page
+            const list = messagesRef.current;
+            list?.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
       }, [project.conversation.length, project.versions.length, isGenerating]);
 
       const timeline = [...project.conversation, ...project.versions]
             .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
       return (
-            <div className={`h-full shrink-0 transition-all ${isMenuOpen ? 'max-sm:w-0 overflow-hidden' : 'w-full'} sm:w-[380px]`}>
-                  <div className="flex h-full flex-col">
+            <div className={`h-full min-h-0 shrink-0 transition-all ${isMenuOpen ? 'max-sm:w-0 overflow-hidden' : 'w-full'} sm:w-[380px]`}>
+                  <div className="flex h-full min-h-0 flex-col">
                         {/* Message Container */}
-                        <div className="no-scrollbar flex flex-1 flex-col gap-5 overflow-auto px-4 pb-4 pt-2">
+                        <div ref={messagesRef} className="no-scrollbar relative flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4 pt-2">
                               {timeline.map((item) => {
                                     if ('content' in item) {
                                           const msg = item as Message;
@@ -145,7 +147,6 @@ const Sidebar = ({ isMenuOpen, project, setProject, isGenerating, setIsGeneratin
                                           <span className="sr-only">Working on your request</span>
                                     </div>
                               )}
-                              <div ref={messagesEndRef} />
                         </div>
 
                         {/* Input Area */}
