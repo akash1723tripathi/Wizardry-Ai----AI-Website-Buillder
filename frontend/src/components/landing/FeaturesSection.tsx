@@ -1,7 +1,7 @@
-import { ChartSplineIcon, LayoutPanelTopIcon, NotebookPenIcon } from "lucide-react";
+import { ChartSplineIcon, LayoutPanelTopIcon, NotebookPenIcon, type LucideIcon } from "lucide-react";
 
 interface Feature {
-    icon: React.FC<React.SVGProps<SVGSVGElement>>;
+    icon: LucideIcon;
     title: string;
     description: string;
 }
@@ -26,14 +26,14 @@ export default function FeaturesSection() {
     ];
 
     return (
-        <div id="features" className="grid border mt-32 sm:mt-42 rounded-lg max-w-6xl mx-auto border-gray-200/70 grid-cols-1 divide-y divide-gray-200/70 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+        <div id="features" className="grid border mt-32 sm:mt-42 rounded-lg max-w-6xl mx-auto border-white/10 grid-cols-1 divide-y divide-white/10 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
             {features.map((item, index) => (
-                <div key={index} className="flex flex-col items-start gap-4 hover:bg-gray-50 transition duration-300 p-8 pb-14">
-                    <div className="flex items-center gap-2 text-gray-500">
-                        <item.icon className="w-5 h-5" />
+                <div key={index} className="flex flex-col items-start gap-4 hover:bg-white/[0.03] transition duration-300 p-8 pb-14">
+                    <div className="flex items-center gap-2 text-slate-100">
+                        <item.icon className="w-5 h-5 text-[#a5d8ff]" />
                         <h2 className="font-medium text-base">{item.title}</h2>
                     </div>
-                    <p className="text-gray-500 text-sm leading-6 max-w-72">{item.description}</p>
+                    <p className="text-slate-400 text-sm leading-6 max-w-72">{item.description}</p>
                 </div>
             ))}
         </div>
