@@ -33,7 +33,7 @@ const Preview = () => {
       console.error(error);
 
       if (error?.response?.status === 401) {
-        navigate('/auth/signin');
+        navigate('/auth/sign-in');
       }
     } finally {
       setLoading(false);
@@ -45,7 +45,7 @@ const Preview = () => {
       if (session?.user) {
         fetchCode();
       } else {
-        navigate('/auth/signin');
+        navigate('/auth/sign-in');
       }
     }
   }, [isPending, session?.user, projectId, versionId])
@@ -55,7 +55,7 @@ const Preview = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className='flex justify-center items-center h-screen bg-gray-950'
+        className='flex justify-center items-center h-screen bg-black'
       >
         <motion.div
           animate={{
@@ -67,7 +67,7 @@ const Preview = () => {
             scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
           }}
         >
-          <Loader2Icon className='size-7 text-indigo-500' />
+          <Loader2Icon className='size-7 text-slate-300' />
         </motion.div>
       </motion.div>
     )
@@ -80,7 +80,7 @@ const Preview = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className='flex flex-col justify-center items-center h-screen bg-gray-950 text-white'
+          className='flex flex-col justify-center items-center h-screen bg-black text-white'
         >
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -107,6 +107,7 @@ const Preview = () => {
           project={{ current_code: code } as Project}
           isGenerating={false}
           showEditorPanel={false}
+          variant="plain"
         />
       </motion.div>
     </PageTransition>
